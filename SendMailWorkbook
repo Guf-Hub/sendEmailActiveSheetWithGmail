@@ -1,0 +1,100 @@
+Sub SendMailWorkbook() 'Отправить текущую книгу, как вложение по эл.почте
+
+    Dim newMail As CDO.Message
+    Dim mConfig As CDO.Configuration
+    Dim wb As Workbook
+    Dim Flds As Variant
+    Dim TempFilePath, TempFileName, FileExtStr, msConfigURL As String
+    
+    Application.ScreenUpdating = False: Application.DisplayAlerts = False
+    
+    Set wb = ActiveWorkbook
+
+    If Val(Application.Version) >= 12 Then
+        If wb.FileFormat = 51 And wb.HasVBProject = True Then
+            MsgBox "Текущий файл содержит код VBA, в отправляемом вам файле кода VBA не будет." & vbNewLine & _
+            "Сохраните файл как .xlsm, а затем попробуйте макрос еще раз.", vbInformation
+            Exit Sub
+        End If
+    End If
+
+    ' Создание временной копии текущей книги
+    TempFilePath = Environ$("temp") & "\"
+    TempFileName = "Копия " & wb.Name & " отправлено " & Format(Now, "dd.mm.yy")
+    FileExtStr = "." & LCase(Right(wb.Name, Len(wb.Name) - InStrRev(wb.Name, ".", , 1)))
+    wb.SaveCopyAs TempFilePath & TempFileName & FileExtStr
+    
+    On Error Resume Next
+    SentTo = InputBox("Введите получателя(-ей), через запятую (обязательное поле):", "Запрос данных", "Введите e-mail")
+    
+    If SentTo = Empty Then
+        MsgBox "Отмена отправки", vbCritical, "Получатели не указаны"
+        Kill TempFilePath & TempFileName & FileExtStr ' Удаление времеого файла
+        Application.CutCopyMode = False 'очистка буфера обмена
+        Application.ScreenUpdating = True: Application.DisplayAlerts = True
+        Exit Sub
+    End If
+    
+    SentSubject = InputBox("Введите тему письма (обязательное поле):", "Запрос информации", "")
+    
+    If SentSubject = Empty Then
+        MsgBox "Отмена отправки", vbCritical, "Тема письма не указана"
+        Kill TempFilePath & TempFileName & FileExtStr ' Удаление времеого файла
+        Application.CutCopyMode = False 'очистка буфера обмена
+        Application.ScreenUpdating = True: Application.DisplayAlerts = True
+        Exit Sub
+    End If
+    
+    SentText = InputBox("Введите коментарий (не обязательно):", "Запрос информации", "")
+    
+    On Error GoTo ErrHandle
+    Set newMail = New CDO.Message
+    Set mConfig = New CDO.Configuration
+    mConfig.Load -1
+    
+    Set Flds = mConfig.Fields
+    msConfigURL = "http://schemas.microsoft.com/cdo/configuration"
+    
+    With Flds
+        .Item(msConfigURL & "/smtpusessl") = True
+'        .Item(msConfigURL & "/smtpserver") = "smtp.mail.ru"
+'        .Item(msConfigURL & "/smtpserver") = "smtp.yandex.ru"
+        .Item(msConfigURL & "/smtpserver") = "smtp.gmail.com"
+        .Item(msConfigURL & "/smtpserverport") = 465
+        .Item(msConfigURL & "/smtpauthenticate") = 1
+        .Item(msConfigURL & "/sendusing") = 2
+        .Item(msConfigURL & "/sendusername") = "ДОБАВЬТЕ ВАШУ ПОЧТУ"
+        .Item(msConfigURL & "/sendpassword") = "ДОБАВЬТЕ ПАРОЛЬ"
+        .Update
+    End With
+    
+    With newMail
+        .Subject = SentSubject ' Тема письма
+        .From = "ДОБАВЬТЕ ВАШУ ПОЧТУ" ' От кого = username почты
+        .To = SentTo ' Кому
+        .CC = "" ' Копия
+        .BCC = "" ' Скрытая копия
+        ' Чтобы установить тело письма, как текст, используйте .TextBody
+        ' Чтобы отправить полную веб-страницу, используйте .CreateMHTMLBody
+        .HTMLBody = SentText & "<hr>" & "<br>" & "Это тестовое письмо. Не отвечайте на него."  'Для форматирования используйте HTML теги.
+        .AddAttachment TempFilePath & TempFileName & FileExtStr ' Ссылка на вложение
+    End With
+    
+    newMail.Configuration = mConfig
+    newMail.Send
+    MsgBox "E-mail отправлен!", vbInformation, "Сообщение об отправке"
+    
+ExitLine:
+    'Удаление времеого файла
+    Kill TempFilePath & TempFileName & FileExtStr
+    ' Очистка памяти
+    Set newMail = Nothing: Set mConfig = Nothing
+    Application.CutCopyMode = False 'очистка буфера обмена
+    Application.ScreenUpdating = True: Application.DisplayAlerts = True
+    Exit Sub
+    
+ErrHandle:
+    MsgBox "Ошибка: " & Err.Description, vbInformation, "Внимание"
+    GoTo ExitLine
+    
+End Sub
