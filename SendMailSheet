@@ -47,19 +47,19 @@ Sub SendMailSheet() 'Отправить текущий активный лист
     With Flds
         .Item(msConfigURL & "/smtpusessl") = True
 '        .Item(msConfigURL & "/smtpserver") = "smtp.mail.ru"
-        .Item(msConfigURL & "/smtpserver") = "smtp.yandex.ru"
-'        .Item(msConfigURL & "/smtpserver") = "smtp.gmail.com"
+'        .Item(msConfigURL & "/smtpserver") = "smtp.yandex.ru"
+        .Item(msConfigURL & "/smtpserver") = "smtp.gmail.com"
         .Item(msConfigURL & "/smtpserverport") = 465
         .Item(msConfigURL & "/smtpauthenticate") = 1
         .Item(msConfigURL & "/sendusing") = 2
-        .Item(msConfigURL & "/sendusername") = "ВВЕДИТЕ АДРЕС ВАШЕЙ ПОЧТЫ"
-        .Item(msConfigURL & "/sendpassword") = "ВВЕДИТЕ ПАРОЛЬ"
+        .Item(msConfigURL & "/sendusername") = "ДОБАВЬТЕ АДРЕС ВАШЕЙ ПОЧТЫ"
+        .Item(msConfigURL & "/sendpassword") = "ДОБАВЬТЕ ПАРОЛЬ"
         .Update
     End With
     
     With newMail
         .Subject = SentSubject ' Тема письма
-        .From = "ВВЕДИТЕ АДРЕС ВАШЕЙ ПОЧТЫ" ' От кого
+        .From = "ДОБАВЬТЕ АДРЕС ВАШЕЙ ПОЧТЫ" ' От кого
         .To = SentTo ' Кому
         .CC = "" ' Копия
         .BCC = "" ' Скрытая копия
