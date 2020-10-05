@@ -1,0 +1,89 @@
+Sub SendMailSheet() 'Отправить текущий активный лист, как вложение по эл.почте
+
+    Dim newMail As CDO.Message
+    Dim mConfig As CDO.Configuration
+    Dim Flds As Variant
+    Dim msConfigURL As String
+    
+    Application.ScreenUpdating = False: Application.DisplayAlerts = False
+    
+    ' Создание временной копии текущего листа
+    wsPath = Environ("TEMP") & "\" & ActiveSheet.Name & " отправлено " & Format(Now, "dd.mm.yy") & ".xlsx"
+    ActiveSheet.Copy
+    ActiveWorkbook.SaveAs wsPath
+    ActiveWorkbook.Close
+
+    On Error Resume Next
+    SentTo = InputBox("Введите получателя(-ей), через запятую (обязательное поле):", "Запрос данных", "Введите e-mail")
+    
+    If SentTo = Empty Then
+        MsgBox "Отмена отправки", vbCritical, "Получатели не указаны"
+        Kill wsPath ' Удаление времеого файла
+        Application.CutCopyMode = False 'очистка буфера обмена
+        Application.ScreenUpdating = True: Application.DisplayAlerts = True
+        Exit Sub
+    End If
+    
+    SentSubject = InputBox("Введите тему письма (обязательное поле):", "Запрос информации", "")
+    
+    If SentSubject = Empty Then
+        MsgBox "Отмена отправки", vbCritical, "Тема письма не указана"
+        Kill wsPath ' Удаление времеого файла
+        Application.CutCopyMode = False 'очистка буфера обмена
+        Application.ScreenUpdating = True: Application.DisplayAlerts = True
+        Exit Sub
+    End If
+    
+    SentText = InputBox("Введите коментарий (не обязательно):", "Запрос информации", "")
+    
+    On Error GoTo ErrHandle
+    Set newMail = New CDO.Message
+    Set mConfig = New CDO.Configuration
+    mConfig.Load -1
+    
+    Set Flds = mConfig.Fields
+    msConfigURL = "http://schemas.microsoft.com/cdo/configuration"
+    
+    With Flds
+        .Item(msConfigURL & "/smtpusessl") = True
+'        .Item(msConfigURL & "/smtpserver") = "smtp.mail.ru"
+        .Item(msConfigURL & "/smtpserver") = "smtp.yandex.ru"
+'        .Item(msConfigURL & "/smtpserver") = "smtp.gmail.com"
+        .Item(msConfigURL & "/smtpserverport") = 465
+        .Item(msConfigURL & "/smtpauthenticate") = 1
+        .Item(msConfigURL & "/sendusing") = 2
+        .Item(msConfigURL & "/sendusername") = "ВВЕДИТЕ АДРЕС ВАШЕЙ ПОЧТЫ"
+        .Item(msConfigURL & "/sendpassword") = "ВВЕДИТЕ ПАРОЛЬ"
+        .Update
+    End With
+    
+    With newMail
+        .Subject = SentSubject ' Тема письма
+        .From = "ВВЕДИТЕ АДРЕС ВАШЕЙ ПОЧТЫ" ' От кого
+        .To = SentTo ' Кому
+        .CC = "" ' Копия
+        .BCC = "" ' Скрытая копия
+        ' Чтобы отправить тело письма, как текст, используйте .TextBody
+        ' Чтобы отправить полную веб-страницу, используйте .CreateMHTMLBody
+        .HTMLBody = SentText & "<hr>" & "<br>" & "Это тестовое письмо. Не отвечайте на него."  'Для форматирования используйте HTML теги.
+        .AddAttachment wsPath ' Ссылка на вложение
+    End With
+    
+    newMail.Configuration = mConfig
+    newMail.Send
+    MsgBox "E-mail отправлен!", vbInformation, "Сообщение об отправке"
+    
+ExitLine:
+    ' Удаление времеого файла
+    Kill wsPath
+    ' Очистка памяти
+    Set newMail = Nothing: Set mConfig = Nothing
+    Application.CutCopyMode = False 'очистка буфера обмена
+    Application.ScreenUpdating = True: Application.DisplayAlerts = True
+    Exit Sub
+    
+ErrHandle:
+    MsgBox "Ошибка: " & Err.Description, vbInformation, "Внимание"
+    GoTo ExitLine
+    
+End Sub
