@@ -1,4 +1,10 @@
-Sub SendMailWorkbook() 'Отправить текущую книгу, как вложение по эл.почте
+'* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+'* SendMailWorkbook : Отправить текущую книгу, как вложение по эл.почте
+'* Created          : 05-10-2021 13:28
+'* Author           : Mikhail Nosaev - разработка Excel, Google таблиц и VBA, GAS скриптов.
+'* Contacts         : https://t.me/nosaev_m
+'* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+Sub SendMailWorkbook()
 
     Dim newMail As CDO.Message
     Dim mConfig As CDO.Configuration
